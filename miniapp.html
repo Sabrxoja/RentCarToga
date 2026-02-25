@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RentCar — Клиентский кабинет</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #0a0a0f;
+    --surface:   #111118;
+    --card:      #16161f;
+    --border:    #1e1e2e;
+    --accent:    #c8f04a;
+    --accent2:   #4af0c8;
+    --muted:     #3a3a50;
+    --text:      #e8e8f0;
+    --subtext:   #6b6b85;
+    --danger:    #f04a4a;
+    --warn:      #f0a84a;
+    --r:         16px;
+    --r-sm:      10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 18px; letter-spacing: -.5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .score-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 5px 12px;
+    font-size: 13px; font-weight: 500;
+  }
+  .score-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px; font-weight: 500;
+    color: var(--subtext);
+    cursor: pointer;
+    transition: all .2s;
+    border: 1px solid transparent;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #0a0a0f;
+    font-weight: 700;
+  }
+
+  /* ── CONTENT ── */
+  .content { padding: 16px; display: none; }
+  .content.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--subtext);
+    margin-bottom: 10px; margin-top: 4px;
+  }
+
+  /* ── HERO CARD ── */
+  .hero-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(200,240,74,.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-greeting {
+    font-size: 13px; color: var(--subtext); margin-bottom: 4px;
+  }
+  .hero-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800; margin-bottom: 20px;
+    line-height: 1.1;
+  }
+  .hero-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+    background: var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .hero-stat {
+    background: rgba(10,10,15,.7);
+    padding: 12px 10px; text-align: center;
+  }
+  .hero-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 700; color: var(--accent);
+    display: block;
+  }
+  .hero-stat-lbl {
+    font-size: 10px; color: var(--subtext); margin-top: 2px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+
+  /* ── ACTIVE RENTAL CARD ── */
+  .rental-active-card {
+    background: linear-gradient(135deg, rgba(200,240,74,.08), rgba(74,240,200,.05));
+    border: 1px solid rgba(200,240,74,.25);
+    border-radius: var(--r); padding: 18px;
+    margin-bottom: 16px;
+  }
+  .rental-active-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .4; transform: scale(1.4); }
+  }
+  .rental-car-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px; font-weight: 700; margin-bottom: 4px;
+  }
+  .rental-plate {
+    font-size: 12px; color: var(--subtext);
+    font-family: monospace; letter-spacing: 1px;
+  }
+  .rental-details {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;
+  }
+  .rental-detail {
+    background: rgba(0,0,0,.3); border-radius: var(--r-sm); padding: 10px 12px;
+  }
+  .rental-detail-lbl { font-size: 10px; color: var(--subtext); text-transform: uppercase; letter-spacing: .5px; }
+  .rental-detail-val { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color .2s, transform .15s;
+    cursor: pointer;
+  }
+  .card:active { transform: scale(.98); }
+  .card:hover { border-color: var(--muted); }
+
+  .card-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 700;
+  }
+  .card-sub { font-size: 13px; color: var(--subtext); margin-top: 3px; }
+
+  /* ── CAR CARD ── */
+  .car-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden; margin-bottom: 10px;
+    transition: transform .15s, border-color .2s;
+  }
+  .car-card:active { transform: scale(.98); }
+  .car-card-image {
+    height: 140px;
+    background: linear-gradient(135deg, #1a1a2e, #0f0f20);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px; position: relative; overflow: hidden;
+  }
+  .car-card-image::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(transparent, var(--card));
+  }
+  .car-status-pill {
+    position: absolute; top: 12px; right: 12px;
+    padding: 4px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 700; letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .status-free    { background: rgba(200,240,74,.15); color: var(--accent); border: 1px solid rgba(200,240,74,.3); }
+  .status-rent    { background: rgba(240,168,74,.12); color: var(--warn);   border: 1px solid rgba(240,168,74,.3); }
+  .status-service { background: rgba(240,74,74,.12);  color: var(--danger); border: 1px solid rgba(240,74,74,.3); }
+
+  .car-card-body { padding: 14px 16px; }
+  .car-card-title {
+    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+  }
+  .car-card-meta {
+    display: flex; gap: 12px; margin-top: 10px;
+  }
+  .car-meta-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; color: var(--subtext);
+  }
+  .car-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 700; color: var(--accent);
+    margin-top: 10px;
+  }
+  .car-price span { font-size: 11px; color: var(--subtext); font-weight: 400; }
+
+  /* ── SCORE METER ── */
+  .score-section { margin-bottom: 16px; }
+  .score-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 20px;
+  }
+  .score-number {
+    font-family: 'Syne', sans-serif; font-size: 52px; font-weight: 800;
+    line-height: 1; margin-bottom: 6px;
+  }
+  .score-label { font-size: 13px; color: var(--subtext); margin-bottom: 16px; }
+  .score-bar-bg {
+    height: 8px; background: var(--muted); border-radius: 100px; overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%; border-radius: 100px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+  }
+  .score-tiers {
+    display: flex; gap: 3px; margin-top: 8px;
+  }
+  .score-tier {
+    flex: 1; height: 3px; border-radius: 100px;
+  }
+  .score-tier-label {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--subtext); margin-top: 6px;
+  }
+
+  /* ── HISTORY ITEM ── */
+  .history-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .history-info { flex: 1; }
+  .history-title { font-weight: 500; font-size: 14px; }
+  .history-sub { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+  .history-amount {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+    text-align: right; white-space: nowrap;
+  }
+
+  /* ── REGISTER FORM ── */
+  .register-wrap {
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .register-title {
+    font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800;
+    line-height: 1.15; margin-bottom: 4px;
+  }
+  .register-sub { font-size: 14px; color: var(--subtext); margin-bottom: 10px; }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-label { font-size: 12px; font-weight: 600; color: var(--subtext); text-transform: uppercase; letter-spacing: .5px; }
+  .input-field {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--r-sm); padding: 14px 16px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px;
+    outline: none; transition: border-color .2s;
+    width: 100%;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); }
+
+  /* ── BUTTON ── */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 16px;
+    border-radius: var(--r-sm); border: none; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    transition: all .2s; letter-spacing: .3px;
+  }
+  .btn-primary {
+    background: var(--accent); color: #0a0a0f;
+  }
+  .btn-primary:active { transform: scale(.97); background: #b8e03a; }
+  .btn-ghost {
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:active { transform: scale(.97); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center; padding: 48px 20px;
+    color: var(--subtext); font-size: 14px;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1e1e2e; border: 1px solid var(--border); border-radius: 100px;
+    padding: 10px 20px; font-size: 13px; font-weight: 500;
+    opacity: 0; transition: all .3s; z-index: 999; white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,15,.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    padding: 6px 0;
+    cursor: pointer; transition: color .2s;
+    color: var(--subtext); font-size: 10px; font-weight: 500;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item svg { width: 22px; height: 22px; stroke-width: 1.8; }
+  .nav-item.active svg { stroke-width: 2.2; }
+
+  /* ── LOADING ── */
+  .loader {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 60vh; gap: 16px;
+    color: var(--subtext); font-size: 14px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .pb-nav { padding-bottom: 80px; }
+
+  /* ── CHIPS ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip {
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border); color: var(--subtext);
+    background: var(--card); transition: all .2s;
+  }
+  .chip.active {
+    background: rgba(200,240,74,.1); border-color: rgba(200,240,74,.4);
+    color: var(--accent);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7);
+    backdrop-filter: blur(6px);
+    z-index: 200; display: none; align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    width: 100%; padding: 24px 20px 40px;
+    animation: slideUp .3s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } }
+  .modal-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--muted); margin: 0 auto 20px;
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  /* animations */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .fade-in { animation: fadeIn .4s ease both; }
+  .fade-in-2 { animation: fadeIn .4s ease .1s both; }
+  .fade-in-3 { animation: fadeIn .4s ease .2s both; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen" class="loader">
+  <div class="spinner"></div>
+  <span>Загрузка...</span>
+</div>
+
+<!-- REGISTER SCREEN -->
+<div id="registerScreen" style="display:none">
+  <div style="padding:20px 20px 0; padding-top: calc(20px + env(safe-area-inset-top))">
+    <div style="font-size:40px; margin-bottom:16px">🚗</div>
+    <div class="register-title fade-in">Добро пожаловать<br>в RentCar</div>
+    <div class="register-sub fade-in-2">Зарегистрируйтесь, чтобы арендовать автомобиль</div>
+  </div>
+  <div class="register-wrap fade-in-3">
+    <div class="input-group">
+      <div class="input-label">Ваше имя</div>
+      <input id="regName" class="input-field" type="text" placeholder="Алишер Каримов">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Номер телефона</div>
+      <input id="regPhone" class="input-field" type="tel" placeholder="+998 90 123 45 67">
+    </div>
+    <button class="btn btn-primary" onclick="register()">
+      <span>Зарегистрироваться</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <div style="text-align:center; font-size:12px; color:var(--subtext); margin-top:4px">
+      Ваши данные защищены и не передаются третьим лицам
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      RentCar
+    </div>
+    <div class="score-badge" id="headerScore">
+      <div class="score-dot" id="headerScoreDot" style="background:var(--accent)"></div>
+      <span id="headerScoreVal">—</span>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('home',this)">Главная</div>
+    <div class="tab" onclick="switchTab('cars',this)">Машины</div>
+    <div class="tab" onclick="switchTab('history',this)">История</div>
+    <div class="tab" onclick="switchTab('profile',this)">Профиль</div>
+  </div>
+
+  <!-- HOME TAB -->
+  <div id="tab-home" class="content active pb-nav">
+
+    <div class="hero-card fade-in">
+      <div class="hero-greeting">Привет 👋</div>
+      <div class="hero-name" id="heroName">...</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-val" id="statScore">—</span>
+          <div class="hero-stat-lbl">Скоринг</div>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-val" id="statTrips">—</span>
+          <div class="hero-stat-lbl">Поездок</div>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-val" id="statStatus">—</span>
+          <div class="hero-stat-lbl">Статус</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active rental -->
+    <div id="activeRentalSection" style="display:none" class="fade-in-2">
+      <div class="section-title">Активная аренда</div>
+      <div class="rental-active-card">
+        <div class="rental-active-header">
+          <div class="live-badge"><div class="live-dot"></div>В аренде</div>
+          <div style="font-size:12px; color:var(--subtext)" id="rentalDays">—</div>
+        </div>
+        <div class="rental-car-name" id="rentalCarName">—</div>
+        <div class="rental-plate" id="rentalPlate">—</div>
+        <div class="rental-details">
+          <div class="rental-detail">
+            <div class="rental-detail-lbl">Начало</div>
+            <div class="rental-detail-val" id="rentalStart">—</div>
+          </div>
+          <div class="rental-detail">
+            <div class="rental-detail-lbl">Цена/день</div>
+            <div class="rental-detail-val" id="rentalPrice">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="noRentalSection" class="fade-in-2" style="display:none">
+      <div class="section-title">Нет активной аренды</div>
+      <div class="card" onclick="switchTabByName('cars')">
+        <div class="card-row">
+          <div>
+            <div class="card-title">Найти машину</div>
+            <div class="card-sub">Посмотрите доступные авто</div>
+          </div>
+          <span style="font-size:24px">→</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fade-in-3">
+      <div class="section-title" style="margin-top:8px">Быстрые действия</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div class="card" style="text-align:center; padding:20px 12px" onclick="switchTabByName('cars')">
+          <div style="font-size:28px; margin-bottom:8px">🚗</div>
+          <div style="font-size:13px; font-weight:600">Машины</div>
+          <div style="font-size:11px; color:var(--subtext); margin-top:2px">Доступные авто</div>
+        </div>
+        <div class="card" style="text-align:center; padding:20px 12px" onclick="switchTabByName('history')">
+          <div style="font-size:28px; margin-bottom:8px">📋</div>
+          <div style="font-size:13px; font-weight:600">История</div>
+          <div style="font-size:11px; color:var(--subtext); margin-top:2px">Мои аренды</div>
+        </div>
+        <div class="card" style="text-align:center; padding:20px 12px" onclick="switchTabByName('profile')">
+          <div style="font-size:28px; margin-bottom:8px">⭐️</div>
+          <div style="font-size:13px; font-weight:600">Скоринг</div>
+          <div style="font-size:11px; color:var(--subtext); margin-top:2px">Мой рейтинг</div>
+        </div>
+        <div class="card" style="text-align:center; padding:20px 12px" onclick="callManager()">
+          <div style="font-size:28px; margin-bottom:8px">📞</div>
+          <div style="font-size:13px; font-weight:600">Связаться</div>
+          <div style="font-size:11px; color:var(--subtext); margin-top:2px">С менеджером</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARS TAB -->
+  <div id="tab-cars" class="content pb-nav">
+    <div class="chips" id="carFilters">
+      <div class="chip active" onclick="filterCars('all',this)">Все</div>
+      <div class="chip" onclick="filterCars('free',this)">✅ Свободные</div>
+      <div class="chip" onclick="filterCars('Spark',this)">Spark</div>
+      <div class="chip" onclick="filterCars('Nexia',this)">Nexia-3</div>
+      <div class="chip" onclick="filterCars('Matiz',this)">Matiz</div>
+    </div>
+    <div id="carsList"></div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" class="content pb-nav">
+    <div id="historyList"></div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div id="tab-profile" class="content pb-nav">
+    <div class="score-section">
+      <div class="section-title">Мой скоринг</div>
+      <div class="score-card">
+        <div class="score-number" id="profileScore">—</div>
+        <div class="score-label" id="profileScoreLabel">Загрузка...</div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" id="scoreBarFill" style="width:0%"></div>
+        </div>
+        <div class="score-tiers">
+          <div class="score-tier" style="background:var(--danger)"></div>
+          <div class="score-tier" style="background:var(--warn)"></div>
+          <div class="score-tier" style="background:var(--accent2)"></div>
+          <div class="score-tier" style="background:var(--accent)"></div>
+        </div>
+        <div class="score-tier-label">
+          <span>Плохой</span><span>Средний</span><span>Хороший</span><span>Отличный</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Как улучшить скоринг</div>
+    <div id="scoringTips"></div>
+
+    <div class="section-title" style="margin-top:16px">Мои данные</div>
+    <div class="card">
+      <div style="display:flex; flex-direction:column; gap:12px">
+        <div class="card-row">
+          <span style="color:var(--subtext);font-size:13px">Имя</span>
+          <span id="profileName" style="font-weight:500">—</span>
+        </div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div class="card-row">
+          <span style="color:var(--subtext);font-size:13px">Телефон</span>
+          <span id="profilePhone" style="font-weight:500;font-family:monospace">—</span>
+        </div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div class="card-row">
+          <span style="color:var(--subtext);font-size:13px">Telegram</span>
+          <span id="profileTg" style="font-weight:500">—</span>
+        </div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div class="card-row">
+          <span style="color:var(--subtext);font-size:13px">Поездок</span>
+          <span id="profileTrips" style="font-weight:500">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CAR MODAL -->
+<div class="modal-overlay" id="carModal" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalCarName">—</div>
+    <div id="modalCarDetails"></div>
+    <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px">
+      <button class="btn btn-primary" onclick="requestRental()">
+        🔑 Запросить аренду
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// Telegram WebApp init
+// ─────────────────────────────────────────
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#0a0a0f');
+  tg.setBackgroundColor('#0a0a0f');
+}
+
+const tgUser = tg?.initDataUnsafe?.user || {
+  id: 0, first_name: 'Гость', username: 'guest'
+};
+
+// ─────────────────────────────────────────
+// State
+// ─────────────────────────────────────────
+let clientData    = null;
+let allCars       = [];
+let activeRental  = null;
+let rentals       = [];
+let currentFilter = 'all';
+let selectedCarId = null;
+
+// ─────────────────────────────────────────
+// API calls — замени BASE_URL на свой сервер
+// ─────────────────────────────────────────
+const BASE_URL = 'https://YOUR_SERVER_URL'; // ← заменить
+
+async function apiGet(path) {
+  try {
+    const r = await fetch(BASE_URL + path, {
+      headers: { 'X-Telegram-Init-Data': tg?.initData || '' }
+    });
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) {
+    console.warn('API error:', e);
+    return null;
+  }
+}
+
+async function apiPost(path, body) {
+  try {
+    const r = await fetch(BASE_URL + path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': tg?.initData || ''
+      },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) {
+    console.warn('API error:', e);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────
+// MOCK DATA (пока нет сервера — демо режим)
+// ─────────────────────────────────────────
+function getMockData() {
+  return {
+    client: {
+      id: 1,
+      name: tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : ''),
+      username: tgUser.username || '—',
+      phone: '+998 90 123 45 67',
+      score: 142,
+      total_trips: 7,
+      active_car_id: 3
+    },
+    cars: [
+      { id:1, brand:'Chevrolet', model:'Spark',   plate:'A847B77', price_day:90000,  status:'free',    current_km:43210 },
+      { id:2, brand:'Chevrolet', model:'Spark',   plate:'C123M45', price_day:95000,  status:'rent',    current_km:87654 },
+      { id:3, brand:'Chevrolet', model:'Spark',   plate:'H321K99', price_day:88000,  status:'rent',    current_km:32100 },
+      { id:4, brand:'Chevrolet', model:'Spark',   plate:'M456T12', price_day:92000,  status:'free',    current_km:55000 },
+      { id:5, brand:'Chevrolet', model:'Spark',   plate:'X789P34', price_day:85000,  status:'service', current_km:61200 },
+      { id:6, brand:'Daewoo',    model:'Nexia-3', plate:'K654L78', price_day:150000, status:'free',    current_km:28300 },
+      { id:7, brand:'Daewoo',    model:'Matiz',   plate:'B321H56', price_day:80000,  status:'free',    current_km:94500 },
+    ],
+    rentals: [
+      { id:5, car_id:2, car_name:'Chevrolet Spark', plate:'C123M45', start_date:'2026-02-10', end_date:'2026-02-14', total_sum:380000, status:'closed' },
+      { id:3, car_id:6, car_name:'Daewoo Nexia-3',  plate:'K654L78', start_date:'2026-01-20', end_date:'2026-01-25', total_sum:750000, status:'closed' },
+      { id:1, car_id:1, car_name:'Chevrolet Spark', plate:'A847B77', start_date:'2025-12-15', end_date:'2025-12-18', total_sum:270000, status:'closed' },
+    ],
+    activeRental: {
+      car_id:3, car_name:'Chevrolet Spark', plate:'H321K99',
+      start_date:'2026-02-22', price_day:88000
+    }
+  };
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+async function init() {
+  // Пробуем загрузить с сервера, если нет — демо
+  let data = null;
+  if (BASE_URL !== 'https://YOUR_SERVER_URL') {
+    data = await apiGet(`/client/me?tg_id=${tgUser.id}`);
+  }
+
+  const mock = getMockData();
+
+  if (!data) {
+    // DEMO MODE
+    clientData   = mock.client;
+    allCars      = mock.cars;
+    rentals      = mock.rentals;
+    activeRental = mock.activeRental;
+    showMainApp();
+  } else if (data.registered) {
+    clientData   = data.client;
+    allCars      = data.cars || [];
+    rentals      = data.rentals || [];
+    activeRental = data.active_rental || null;
+    showMainApp();
+  } else {
+    showRegister();
+  }
+}
+
+function showRegister() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('registerScreen').style.display = 'block';
+  const u = tgUser;
+  if (u.first_name) document.getElementById('regName').value = u.first_name + (u.last_name ? ' '+u.last_name : '');
+}
+
+function showMainApp() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  renderAll();
+}
+
+// ─────────────────────────────────────────
+// REGISTER
+// ─────────────────────────────────────────
+async function register() {
+  const name  = document.getElementById('regName').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  if (!name || !phone) { showToast('Заполните все поля'); return; }
+  if (!phone.startsWith('+') || phone.length < 10) {
+    showToast('Введите корректный номер (+998...)');
+    return;
+  }
+
+  const res = await apiPost('/client/register', {
+    tg_id: tgUser.id, username: tgUser.username || '',
+    name, phone
+  });
+
+  if (res && res.ok) {
+    clientData = res.client;
+    allCars    = res.cars || [];
+    rentals    = [];
+    showMainApp();
+    showToast('✅ Регистрация успешна!');
+  } else {
+    // Demo fallback
+    clientData = {
+      id:99, name, phone, username: tgUser.username || '',
+      score:100, total_trips:0, active_car_id:''
+    };
+    allCars  = getMockData().cars;
+    rentals  = [];
+    activeRental = null;
+    showMainApp();
+    showToast('✅ Добро пожаловать, ' + name + '!');
+  }
+}
+
+// ─────────────────────────────────────────
+// RENDER ALL
+// ─────────────────────────────────────────
+function renderAll() {
+  renderHeader();
+  renderHome();
+  renderCars();
+  renderHistory();
+  renderProfile();
+}
+
+// ─────────────────────────────────────────
+// HEADER
+// ─────────────────────────────────────────
+function renderHeader() {
+  const score = clientData?.score || 100;
+  document.getElementById('headerScoreVal').textContent = score + ' pts';
+  const dot = document.getElementById('headerScoreDot');
+  if      (score >= 150) dot.style.background = 'var(--accent)';
+  else if (score >= 100) dot.style.background = '#f0d44a';
+  else if (score >= 60)  dot.style.background = 'var(--warn)';
+  else                   dot.style.background = 'var(--danger)';
+}
+
+// ─────────────────────────────────────────
+// HOME
+// ─────────────────────────────────────────
+function renderHome() {
+  const c = clientData;
+  document.getElementById('heroName').textContent = c.name || c.username || 'Клиент';
+  document.getElementById('statScore').textContent = c.score || 100;
+  document.getElementById('statTrips').textContent = c.total_trips || 0;
+
+  const score = c.score || 100;
+  let statusText = '🟢';
+  if      (score >= 150) statusText = '🟢 VIP';
+  else if (score >= 100) statusText = '🟡 Норм';
+  else if (score >= 60)  statusText = '🟠 Ср.';
+  else                   statusText = '🔴 Низк.';
+  document.getElementById('statStatus').textContent = statusText;
+
+  if (activeRental) {
+    document.getElementById('activeRentalSection').style.display = 'block';
+    document.getElementById('noRentalSection').style.display = 'none';
+    document.getElementById('rentalCarName').textContent = activeRental.car_name;
+    document.getElementById('rentalPlate').textContent   = activeRental.plate;
+    document.getElementById('rentalStart').textContent   = activeRental.start_date;
+    document.getElementById('rentalPrice').textContent   = formatSum(activeRental.price_day) + '/д';
+
+    const days = daysSince(activeRental.start_date);
+    document.getElementById('rentalDays').textContent = days + ' ' + pluralDays(days);
+  } else {
+    document.getElementById('activeRentalSection').style.display = 'none';
+    document.getElementById('noRentalSection').style.display = 'block';
+  }
+}
+
+// ─────────────────────────────────────────
+// CARS
+// ─────────────────────────────────────────
+function renderCars() {
+  const container = document.getElementById('carsList');
+  const filtered  = filterCarsList(allCars, currentFilter);
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🚗</div>Машин не найдено</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(car => {
+    const emoji  = car.brand === 'Daewoo' && car.model === 'Nexia-3' ? '🚙'
+                 : car.model === 'Matiz' ? '🚘' : '🚗';
+    const stCls  = car.status === 'free' ? 'status-free' : car.status === 'rent' ? 'status-rent' : 'status-service';
+    const stLbl  = car.status === 'free' ? 'Свободна'    : car.status === 'rent' ? 'В аренде' : 'Сервис';
+    return `
+    <div class="car-card fade-in" onclick="openCarModal(${car.id})">
+      <div class="car-card-image">
+        ${emoji}
+        <div class="car-status-pill ${stCls}">${stLbl}</div>
+      </div>
+      <div class="car-card-body">
+        <div class="car-card-title">${car.brand} ${car.model}</div>
+        <div class="car-card-meta">
+          <div class="car-meta-item">🔖 ${car.plate}</div>
+          <div class="car-meta-item">📏 ${formatKm(car.current_km)} км</div>
+        </div>
+        <div class="car-price">${formatSum(car.price_day)} <span>сум/день</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCarsList(cars, f) {
+  if (f === 'all')  return cars;
+  if (f === 'free') return cars.filter(c => c.status === 'free');
+  return cars.filter(c => c.model.toLowerCase().includes(f.toLowerCase()));
+}
+
+function filterCars(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderCars();
+}
+
+// ─────────────────────────────────────────
+// CAR MODAL
+// ─────────────────────────────────────────
+function openCarModal(carId) {
+  const car = allCars.find(c => c.id === carId);
+  if (!car) return;
+  selectedCarId = carId;
+
+  document.getElementById('modalCarName').textContent = car.brand + ' ' + car.model;
+
+  const stCls = car.status === 'free' ? 'status-free' : car.status === 'rent' ? 'status-rent' : 'status-service';
+  const stLbl = car.status === 'free' ? '✅ Свободна' : car.status === 'rent' ? '🔑 В аренде' : '🔧 Сервис';
+
+  document.getElementById('modalCarDetails').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px">
+      <div class="rental-detail">
+        <div class="rental-detail-lbl">Номер</div>
+        <div class="rental-detail-val" style="font-family:monospace; font-size:14px">${car.plate}</div>
+      </div>
+      <div class="rental-detail">
+        <div class="rental-detail-lbl">Статус</div>
+        <div class="rental-detail-val"><span class="car-status-pill ${stCls}" style="position:static;font-size:10px">${stLbl}</span></div>
+      </div>
+      <div class="rental-detail">
+        <div class="rental-detail-lbl">Пробег</div>
+        <div class="rental-detail-val">${formatKm(car.current_km)} км</div>
+      </div>
+      <div class="rental-detail">
+        <div class="rental-detail-lbl">Цена/день</div>
+        <div class="rental-detail-val" style="color:var(--accent)">${formatSum(car.price_day)}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('carModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('carModal').classList.remove('open');
+  selectedCarId = null;
+}
+
+function requestRental() {
+  const car = allCars.find(c => c.id === selectedCarId);
+  if (!car) return;
+  if (car.status !== 'free') {
+    showToast('Эта машина недоступна для аренды');
+    return;
+  }
+  closeModal();
+  // Отправляем запрос через Telegram
+  if (tg) {
+    tg.sendData(JSON.stringify({
+      action: 'request_rental',
+      car_id: selectedCarId,
+      client_id: clientData.id
+    }));
+    showToast('✅ Запрос отправлен менеджеру');
+  } else {
+    showToast('✅ Запрос отправлен менеджеру!');
+  }
+}
+
+// ─────────────────────────────────────────
+// HISTORY
+// ─────────────────────────────────────────
+function renderHistory() {
+  const container = document.getElementById('historyList');
+
+  if (!rentals.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div>Истории аренд нет</div>`;
+    return;
+  }
+
+  const html = `
+    <div class="section-title">${rentals.length} аренд(ы)</div>
+    <div class="card" style="padding:0 16px">
+      ${rentals.map(r => `
+        <div class="history-item">
+          <div class="history-icon">🚗</div>
+          <div class="history-info">
+            <div class="history-title">${r.car_name}</div>
+            <div class="history-sub">${r.plate} · ${r.start_date} → ${r.end_date || 'сейчас'}</div>
+          </div>
+          <div>
+            <div class="history-amount" style="color:var(--accent)">${formatSum(r.total_sum)}</div>
+            <div style="font-size:10px; color:var(--subtext); text-align:right; margin-top:2px">сум</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  container.innerHTML = html;
+}
+
+// ─────────────────────────────────────────
+// PROFILE / SCORING
+// ─────────────────────────────────────────
+function renderProfile() {
+  const c     = clientData;
+  const score = c.score || 100;
+
+  document.getElementById('profileScore').textContent = score;
+  document.getElementById('profileName').textContent  = c.name || '—';
+  document.getElementById('profilePhone').textContent = c.phone || '—';
+  document.getElementById('profileTg').textContent    = c.username ? '@' + c.username : '—';
+  document.getElementById('profileTrips').textContent = (c.total_trips || 0) + ' поездок';
+
+  let label = '', color = '';
+  if      (score >= 150) { label = 'Отличный клиент 🏆';  color = 'var(--accent)'; }
+  else if (score >= 100) { label = 'Хороший клиент 🟡';   color = '#f0d44a'; }
+  else if (score >= 60)  { label = 'Средний клиент 🟠';   color = 'var(--warn)'; }
+  else                   { label = 'Требует внимания 🔴';  color = 'var(--danger)'; }
+
+  document.getElementById('profileScoreLabel').textContent = label;
+  document.getElementById('profileScore').style.color = color;
+
+  const pct = Math.min(100, (score / 200) * 100);
+  document.getElementById('scoreBarFill').style.cssText = `width:${pct}%; background:${color};`;
+
+  // Tips
+  const tips = [
+    { icon:'🧹', text:'Возвращайте машину чистой',       pts:'+3' },
+    { icon:'⏰', text:'Возвращайте вовремя',              pts:'+2' },
+    { icon:'⛽️', text:'Заправляйте бак перед сдачей',    pts:'+2' },
+    { icon:'💬', text:'Оставьте отзыв после аренды',     pts:'+2' },
+    { icon:'👥', text:'Рекомендуйте нас друзьям',        pts:'+3' },
+  ];
+  document.getElementById('scoringTips').innerHTML = tips.map(t => `
+    <div class="card" style="display:flex; align-items:center; gap:12px; padding:12px 16px; margin-bottom:6px">
+      <span style="font-size:22px">${t.icon}</span>
+      <span style="flex:1; font-size:13px">${t.text}</span>
+      <span style="font-family:'Syne',sans-serif; font-weight:700; color:var(--accent); font-size:13px">${t.pts}</span>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function switchTabByName(name) {
+  const tabs = document.querySelectorAll('.tab');
+  const map  = { home:0, cars:1, history:2, profile:3 };
+  const idx  = map[name];
+  if (idx === undefined) return;
+  tabs.forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  tabs[idx].classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+function formatSum(n) {
+  return Number(n).toLocaleString('ru-RU');
+}
+function formatKm(n) {
+  return Number(n).toLocaleString('ru-RU');
+}
+function daysSince(dateStr) {
+  const d = new Date(dateStr);
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+}
+function pluralDays(n) {
+  if (n % 10 === 1 && n % 100 !== 11) return 'день';
+  if ([2,3,4].includes(n%10) && ![12,13,14].includes(n%100)) return 'дня';
+  return 'дней';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function callManager() {
+  if (tg) tg.openTelegramLink('https://t.me/YOUR_MANAGER_USERNAME');
+  else showToast('Связь с менеджером');
+}
+
+// ─────────────────────────────────────────
+// START
+// ─────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
